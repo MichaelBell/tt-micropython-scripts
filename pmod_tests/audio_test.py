@@ -27,13 +27,14 @@ def play_audio():
     
     for i in range(36, 85):
         pwm.freq(int(freq_note(i)))
-        time.sleep(0.2)
+        time.sleep(0.1)
     for i in range(84, 35, -1):
         pwm.freq(int(freq_note(i)))
-        time.sleep(0.2)
+        time.sleep(0.1)
 
-    time.sleep(0.4)
+    time.sleep(0.3)
     pwm.deinit()
 
-disable_tt_board()
-play_audio()
+def run_test():
+    disable_tt_board()
+    play_audio()

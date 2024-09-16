@@ -3,6 +3,7 @@ import machine
 import gc
 import random
 from machine import SPI, Pin
+from display import display_pass, display_fail
 
 # Set this to false if no TT carrier is mounted on the demoboard
 DISABLE_TT_ASIC = False
@@ -336,9 +337,8 @@ def test_psram(use_ram_b=True):
             for i in range(8):
                 if buf[i] != data[i]:
                     raise Exception(f"Error {buf[i]} != {data[i]} at addr {addr}+{i}")
-                
-        print("PSRAM OK")
         
+        print("PSRAM OK")
 
 def disable_tt_board():
     if DISABLE_TT_ASIC:
@@ -363,5 +363,10 @@ def test_flash(iters = 1):
 
 disable_tt_board()
 print()
-test_flash(10)
-test_psram(TEST_RAM_B)
+try:
+    test_flash(10)
+    test_psram(TEST_RAM_B)
+except:
+    display_fail()
+else:
+    display_pass()

@@ -2,7 +2,9 @@ import time
 import machine
 import gc
 import random
+import rp2
 from machine import SPI, Pin
+from display import display_pass, display_fail
 
 # Set this to false if no TT carrier is mounted on the demoboard
 DISABLE_TT_ASIC = False
@@ -361,7 +363,14 @@ def test_flash(iters = 1):
         gc.collect()
     print("Flash OK")
 
-disable_tt_board()
-print()
-test_flash(10)
-test_psram(TEST_RAM_B)
+def run_test():
+    disable_tt_board()
+    print()
+    try:
+        test_flash(10)
+        test_psram(TEST_RAM_B)
+    except Exception as e:
+        print(e)
+        display_fail()
+    else:
+        display_pass()

@@ -8,7 +8,7 @@ rst = Pin(3, Pin.IN)
 clk = Pin(0, Pin.IN)
 
 # Disable RAM B test for audio Pmod testing
-qspi_test.TEST_RAM_B = False
+qspi_test.TEST_RAM_B = True
 
 display.clear()
 

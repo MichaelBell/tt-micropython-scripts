@@ -94,6 +94,9 @@ def flash_program(test_data, addr=0):
     flash_sel.on()
     ram_a_sel.on()
     ram_b_sel.on()
+    
+    flash_wp = Pin(25, Pin.IN, Pin.PULL_UP)
+    flash_hold = Pin(26, Pin.IN, Pin.PULL_UP)
 
     def flash_cmd(data, dummy_len=0, read_len=0):
         dummy_buf = bytearray(dummy_len)
@@ -122,6 +125,8 @@ def flash_program(test_data, addr=0):
     CMD_WRITE = 0x02
     CMD_READ = 0x03
     CMD_READ_SR1 = 0x05
+    CMD_READ_SR2 = 0x35
+    CMD_WRITE_SR2 = 0x31
     CMD_WEN = 0x06
     CMD_SECTOR_ERASE = 0x20
     CMD_ID  = 0x90
@@ -133,6 +138,14 @@ def flash_program(test_data, addr=0):
         print("Incorrect device ID")
         print_bytes(id)
         raise Exception("Incorrect device ID")
+
+    sr2 = flash_cmd([CMD_READ_SR2], 0, 1)[0]
+    print(f"SR2: {sr2:02x}")
+    if (sr2 & 2) == 0:
+        print("Enabling QSPI")
+        flash_cmd([CMD_WEN])
+        flash_cmd2([CMD_WRITE_SR2], [2])
+        time.sleep(0.01)
     
     offset = 0
     sector = addr // 4096

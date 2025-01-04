@@ -215,7 +215,7 @@ async def start_computing(dut):
 
 
 async def done_computing(dut):
-    while int(dut.uio_out.value) == DONE_COMPUTING_BIT:
+    while int(dut.uio_out.value) & DONE_COMPUTING_BIT:
         await ClockCycles(dut.clk, 1)
     await ClockCycles(dut.clk, 1)
     dut.tt.uio_oe_pico.value = 0xff

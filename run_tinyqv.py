@@ -1,16 +1,11 @@
 import time
 import sys
 import rp2
-import machine
 import gc
+import machine
 from machine import UART, Pin, PWM, SPI
 
-gc.threshold(10000)
-
-from ttboard.boot.demoboard_detect import DemoboardDetect
-from ttboard.demoboard import DemoBoard
-
-DemoboardDetect.probe()
+from ttcontrol import *
 
 from pio_spi import PIOSPI
 import flash_prog
@@ -56,11 +51,11 @@ def spi_cmd(spi, data, sel, dummy_len=0, read_len=0):
     return read_buf
 
 def setup_flash():
-    spi = PIOSPI(2, Pin(22), Pin(23), Pin(24), freq=10000000)
+    spi = PIOSPI(2, Pin(GPIO_UIO[1]), Pin(GPIO_UIO[2]), Pin(GPIO_UIO[3]), freq=10000000)
 
-    flash_sel = Pin(21, Pin.OUT)
-    ram_a_sel = Pin(27, Pin.OUT)
-    ram_b_sel = Pin(28, Pin.OUT)
+    flash_sel = Pin(GPIO_UIO[0], Pin.OUT)
+    ram_a_sel = Pin(GPIO_UIO[6], Pin.OUT)
+    ram_b_sel = Pin(GPIO_UIO[7], Pin.OUT)
     
     flash_sel.on()
     ram_a_sel.on()
@@ -71,7 +66,7 @@ def setup_flash():
     spi._sm.active(0)
     del spi
 
-    sm = rp2.StateMachine(0, qspi_read, 16_000_000, in_base=Pin(21), out_base=Pin(21), sideset_base=Pin(24))
+    sm = rp2.StateMachine(0, qspi_read, 16_000_000, in_base=Pin(GPIO_UIO[0]), out_base=Pin(GPIO_UIO[0]), sideset_base=Pin(GPIO_UIO[3]))
     sm.active(1)
     
     # Read 1 byte from address 0 to get into continuous read mode
@@ -105,7 +100,7 @@ def setup_flash():
     
     for i in range(num_bytes*2 + 4):
         buf[i] = sm.get()
-        if i > 4:
+        if i >= 4:
             d = buf[i]
             nibble = ((d >> 1) & 1) | ((d >> 1) & 2) | ((d >> 2) & 0x4) | ((d >> 2) & 0x8)
             print("%01x" % (nibble,), end="")
@@ -116,20 +111,20 @@ def setup_flash():
     sm.active(0)
     del sm
     
-    flash_sel = Pin(21, Pin.OUT)
-    ram_a_sel = Pin(27, Pin.OUT)
-    ram_b_sel = Pin(28, Pin.OUT)
+    flash_sel = Pin(GPIO_UIO[0], Pin.OUT)
+    ram_a_sel = Pin(GPIO_UIO[6], Pin.OUT)
+    ram_b_sel = Pin(GPIO_UIO[7], Pin.OUT)
     
     flash_sel.on()
     ram_a_sel.on()
     ram_b_sel.on()    
 
 def setup_ram():
-    spi = PIOSPI(2, Pin(22), Pin(23), Pin(24), freq=10000000)
+    spi = PIOSPI(2, Pin(GPIO_UIO[1]), Pin(GPIO_UIO[2]), Pin(GPIO_UIO[3]), freq=10000000)
 
-    flash_sel = Pin(21, Pin.OUT)
-    ram_a_sel = Pin(27, Pin.OUT)
-    ram_b_sel = Pin(28, Pin.OUT)
+    flash_sel = Pin(GPIO_UIO[0], Pin.OUT)
+    ram_a_sel = Pin(GPIO_UIO[6], Pin.OUT)
+    ram_b_sel = Pin(GPIO_UIO[7], Pin.OUT)
 
     flash_sel.on()
     ram_a_sel.on()
@@ -144,47 +139,41 @@ def setup_ram():
 def run(query=True, stop=True):
     machine.freq(128_000_000)
 
-    tt = DemoBoard()
-    tt.shuttle.tt_um_MichaelBell_tinyQV.enable()
+    select_design(227)
 
     if query:
         input("Reset? ")
 
     # Pull up UART RX
-    Pin(20, Pin.IN, pull=Pin.PULL_UP)
+    Pin(GPIO_UI_IN[7], Pin.IN, pull=Pin.PULL_UP)
     
     # All other inputs pulled low
-    Pin(9, Pin.IN, pull=Pin.PULL_DOWN)
-    Pin(10, Pin.IN, pull=Pin.PULL_DOWN)
-    Pin(11, Pin.IN, pull=Pin.PULL_DOWN)
-    Pin(12, Pin.IN, pull=Pin.PULL_DOWN)
-    Pin(17, Pin.IN, pull=Pin.PULL_DOWN)
-    Pin(18, Pin.IN, pull=Pin.PULL_DOWN)
-    Pin(19, Pin.IN, pull=Pin.PULL_DOWN)    
+    for i in range(7):
+        Pin(GPIO_UI_IN[i], Pin.IN, pull=Pin.PULL_DOWN)
 
-    tt.clk.off()
-    tt.reset_project(False)
-    tt.clock_project_once()
-    tt.clock_project_once()
-    tt.reset_project(True)
-    tt.clk.off()
+    clk = Pin(GPIO_PROJECT_CLK, Pin.OUT, value=0)
+    rst_n = Pin(GPIO_PROJECT_RST_N, Pin.OUT, value=1)
+    for i in range(2):
+        clk.on()
+        clk.off()
+    rst_n.off()
     
-    tt.clk.on()
+    clk.on()
     time.sleep(0.001)
-    tt.clk.off()
+    clk.off()
     time.sleep(0.001)
 
     setup_flash()
     setup_ram()    
 
-    flash_sel = Pin(21, Pin.OUT)
-    qspi_sd0  = Pin(22, Pin.OUT)
-    qspi_sd1  = Pin(23, Pin.OUT)
-    qspi_sck  = Pin(24, Pin.OUT)
-    qspi_sd2  = Pin(25, Pin.OUT)
-    qspi_sd3  = Pin(26, Pin.OUT)
-    ram_a_sel = Pin(27, Pin.OUT)
-    ram_b_sel = Pin(28, Pin.OUT)
+    flash_sel = Pin(GPIO_UIO[0], Pin.OUT)
+    qspi_sd0  = Pin(GPIO_UIO[1], Pin.OUT)
+    qspi_sd1  = Pin(GPIO_UIO[2], Pin.OUT)
+    qspi_sck  = Pin(GPIO_UIO[3], Pin.OUT)
+    qspi_sd2  = Pin(GPIO_UIO[4], Pin.OUT)
+    qspi_sd3  = Pin(GPIO_UIO[5], Pin.OUT)
+    ram_a_sel = Pin(GPIO_UIO[6], Pin.OUT)
+    ram_b_sel = Pin(GPIO_UIO[7], Pin.OUT)
 
     qspi_sck.off()
     flash_sel.off()
@@ -196,27 +185,23 @@ def run(query=True, stop=True):
     qspi_sd3.off()
 
     for i in range(10):
-        tt.clk.off()
+        clk.off()
         time.sleep(0.001)
-        tt.clk.on()
+        clk.on()
         time.sleep(0.001)
 
-    Pin(21, Pin.IN, pull=Pin.PULL_UP)
-    Pin(22, Pin.IN, pull=None)
-    Pin(23, Pin.IN, pull=None)
-    Pin(24, Pin.IN, pull=None)
-    Pin(25, Pin.IN, pull=None)
-    Pin(26, Pin.IN, pull=None)
-    Pin(27, Pin.IN, pull=Pin.PULL_UP)
-    Pin(28, Pin.IN, pull=Pin.PULL_UP)
+    Pin(GPIO_UIO[0], Pin.IN, pull=Pin.PULL_UP)
+    Pin(GPIO_UIO[1], Pin.IN, pull=None)
+    Pin(GPIO_UIO[2], Pin.IN, pull=None)
+    Pin(GPIO_UIO[3], Pin.IN, pull=None)
+    Pin(GPIO_UIO[4], Pin.IN, pull=None)
+    Pin(GPIO_UIO[5], Pin.IN, pull=None)
+    Pin(GPIO_UIO[6], Pin.IN, pull=Pin.PULL_UP)
+    Pin(GPIO_UIO[7], Pin.IN, pull=Pin.PULL_UP)
     
-    for i in range(21, 29):
-        print(f"{machine.mem32[0x40014004+i*8]:08x}")
-    print(f"{machine.mem32[0xd0000004]:08x}")
-
-    tt.reset_project(False)
+    rst_n.on()
     time.sleep(0.001)
-    tt.clk.off()
+    clk.off()
 
     sm = rp2.StateMachine(1, pio_capture, 128_000_000, in_base=Pin(21))
 
@@ -226,7 +211,7 @@ def run(query=True, stop=True):
     rx_dma = rp2.DMA()
     c = rx_dma.pack_ctrl(inc_read=False, treq_sel=5) # Read using the SM0 RX DREQ
     sm.restart()
-    sm.exec("wait(%d, gpio, %d)" % (1, 24))
+    sm.exec("wait(%d, gpio, %d)" % (1, GPIO_UIO[3]))
     rx_dma.config(
         read=0x5020_0024,        # Read from the SM1 RX FIFO
         write=buf,
@@ -241,7 +226,7 @@ def run(query=True, stop=True):
 
     #uart = UART(0, baudrate=115200, tx=Pin(0), rx=Pin(1))
     time.sleep(0.001)
-    tt.clock_project_PWM(64_000_000)
+    clk = PWM(Pin(GPIO_PROJECT_CLK), freq=64_000_000, duty_u16=32768)
 
     # Wait for DMA to complete
     while rx_dma.active():
@@ -255,9 +240,10 @@ def run(query=True, stop=True):
 
     if query:
         input("Stop? ")
-
-    tt.reset_project(True)
-    tt.clock_project_stop()
+    
+    del clk
+    rst_n.init(Pin.IN, pull=Pin.PULL_DOWN)
+    clk = Pin(Pin.IN, pull=Pin.PULL_DOWN)
 
     if False:
         while True:
@@ -287,4 +273,5 @@ def run(query=True, stop=True):
 
 def execute(filename):
     flash_prog.program(filename)
+    gc.collect()
     run(query=False, stop=False)

@@ -1,6 +1,7 @@
 import gc
 gc.threshold(50000)
 import rp2
+from time import sleep_us
 
 import machine
 from machine import Pin
@@ -41,33 +42,34 @@ tt.clock_project_once()
 
 machine.freq(128_000_000)
 
+dma = rp2.DMA()
+
+data = bytearray(18)
+data[0] = 9 # 12 clocks for address and dummy cycles
+data[1] = 11 # 12 nybbles data
+data[2] = 0  # All inputs
+
+data[3] = 0b110110 # data pins to outputs
+
+# 6f00600a6f00
+data[4]  = 0b010100
+data[5]  = 0b110110
+data[6]  = 0
+data[7]  = 0
+data[8]  = 0b010100
+data[9]  = 0
+data[10] = 0
+data[11] = 0b100100
+data[12] = 0b010100
+data[13] = 0b110110
+data[14] = 0
+data[15] = 0
+data[16] = 0
+
+data[17] = 0 # All inputs
+
 while True:
     sm = rp2.StateMachine(0, qspi_send, 128_000_000, out_base=Pin(21))
-    dma = rp2.DMA()
-
-    data = bytearray(18)
-    data[0] = 9 # 12 clocks for address and dummy cycles
-    data[1] = 11 # 12 nybbles data
-    data[2] = 0  # All inputs
-
-    data[3] = 0b110110 # data pins to outputs
-
-    # 6f00600a6f00
-    data[4]  = 0b010100
-    data[5]  = 0b110110
-    data[6]  = 0
-    data[7]  = 0
-    data[8]  = 0b010100
-    data[9]  = 0
-    data[10] = 0
-    data[11] = 0b100100
-    data[12] = 0b010100
-    data[13] = 0b110110
-    data[14] = 0
-    data[15] = 0
-    data[16] = 0
-
-    data[17] = 0 # All inputs
 
     tt.clock_project_once()
     tt.reset_project(True)
@@ -89,10 +91,11 @@ while True:
         trigger = True
     )
 
-    input("Start? ")
+    #input("Start? ")
 
     tt.clk(1)
     tt.reset_project(False)
     tt.clock_project_PWM(64000000)
+    sleep_us(10)
 
-    input("Repeat? ")
+    #input("Repeat? ")

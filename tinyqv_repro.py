@@ -41,55 +41,58 @@ tt.clock_project_once()
 
 machine.freq(128_000_000)
 
-sm = rp2.StateMachine(0, qspi_send, 128_000_000, out_base=Pin(21))
-dma = rp2.DMA()
+while True:
+    sm = rp2.StateMachine(0, qspi_send, 128_000_000, out_base=Pin(21))
+    dma = rp2.DMA()
 
-data = bytearray(18)
-data[0] = 9 # 12 clocks for address and dummy cycles
-data[1] = 11 # 12 nybbles data
-data[2] = 0  # All inputs
+    data = bytearray(18)
+    data[0] = 9 # 12 clocks for address and dummy cycles
+    data[1] = 11 # 12 nybbles data
+    data[2] = 0  # All inputs
 
-data[3] = 0b110110 # data pins to outputs
+    data[3] = 0b110110 # data pins to outputs
 
-# 6f00600a6f00
-data[4]  = 0b010100
-data[5]  = 0b110110
-data[6]  = 0
-data[7]  = 0
-data[8]  = 0b010100
-data[9]  = 0
-data[10] = 0
-data[11] = 0b100100
-data[12] = 0b010100
-data[13] = 0b110110
-data[14] = 0
-data[15] = 0
-data[16] = 0
+    # 6f00600a6f00
+    data[4]  = 0b010100
+    data[5]  = 0b110110
+    data[6]  = 0
+    data[7]  = 0
+    data[8]  = 0b010100
+    data[9]  = 0
+    data[10] = 0
+    data[11] = 0b100100
+    data[12] = 0b010100
+    data[13] = 0b110110
+    data[14] = 0
+    data[15] = 0
+    data[16] = 0
 
-data[17] = 0 # All inputs
+    data[17] = 0 # All inputs
 
-tt.clock_project_once()
-tt.reset_project(True)
-tt.clock_project_once(10)
+    tt.clock_project_once()
+    tt.reset_project(True)
+    tt.clock_project_once(10)
 
-sm.active(1)
-dma.config(
-    read = data,
-    write = sm,
-    count = len(data),
-    ctrl = dma.pack_ctrl(
-        size      = 0,  # 0 = byte, 1 = half word, 2 = word
-        irq_quiet = True,
-        inc_read = True,
-        inc_write = False,
-        bswap     = False,
-        treq_sel = 0 # SM0 TX DREQ
-    ),
-    trigger = True
-)
+    sm.active(1)
+    dma.config(
+        read = data,
+        write = sm,
+        count = len(data),
+        ctrl = dma.pack_ctrl(
+            size      = 0,  # 0 = byte, 1 = half word, 2 = word
+            irq_quiet = True,
+            inc_read = True,
+            inc_write = False,
+            bswap     = False,
+            treq_sel = 0 # SM0 TX DREQ
+        ),
+        trigger = True
+    )
 
-input("Start? ")
+    input("Start? ")
 
-tt.clk(1)
-tt.reset_project(False)
-tt.clock_project_PWM(64000000)
+    tt.clk(1)
+    tt.reset_project(False)
+    tt.clock_project_PWM(64000000)
+
+    input("Repeat? ")

@@ -36,8 +36,8 @@ machine.mem32[0x40100004] = 0x5AFEA050
 # 1.3V
 machine.mem32[0x4010000c] = 0x5AFE00f0  # c0 = 1.15V, d0 = 1.2V, etc
 
-# Drive strength on the clock
-# TODO
+# 8mA drive strength on the clock pin
+# machine.mem32[0x40038044] = 0x66    # 56 = 4mA, 66 = 8mA, 76 = 12mA
 
 def run_test(freq, fast=False):
     # Multiply requested project clock frequency by 2 to get RP2040 clock
